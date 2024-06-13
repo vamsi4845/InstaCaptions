@@ -2,7 +2,7 @@
 
 ![image](https://github.com/vamsi4845/InstaCaptions/assets/39260099/c87c4a3a-913d-4982-b36b-a710cc403d16)
 
-<h2>Insta Captions<</h2>
+<h2>Insta Captions</h2>
 • Developed a dynamic caption generator using Next.js and AWS technologies, focusing on server-side
 rendering (SSR) and frontend design
 
