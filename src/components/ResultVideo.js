@@ -12,6 +12,7 @@ export default function ResultVideo({ filename, transcriptionItems }) {
   const [primaryColor, setPrimaryColor] = useState('#FFFFFF');
   const [outlineColor, setOutlineColor] = useState('#000000');
   const [progress, setProgress] = useState(1);
+  const [isProcessing, setIsProcessing] = useState(false);
   const ffmpegRef = useRef(new FFmpeg());
   const videoRef = useRef(null);
 
@@ -38,6 +39,8 @@ export default function ResultVideo({ filename, transcriptionItems }) {
   }
 
   const transcode = async () => {
+    setIsProcessing(true);
+    setProgress(0);
     const ffmpeg = ffmpegRef.current;
     const srt = transcriptionItemsToSrt(transcriptionItems);
     await ffmpeg.writeFile(filename, await fetchFile(videoUrl));
@@ -54,19 +57,25 @@ export default function ResultVideo({ filename, transcriptionItems }) {
         const [hours, minutes, seconds] = howMuchIsDone.split(':');
         const doneTotalSeconds = hours * 3600 + minutes * 60 + seconds;
         const videoProgress = doneTotalSeconds / duration;
-        setProgress(videoProgress);
+        setProgress(Math.min(videoProgress, 0.99));
       }
     });
     await ffmpeg.exec([
       '-i', filename,
       '-preset', 'ultrafast',
+      '-c:a', 'copy',
       '-vf', `subtitles=subs.srt:fontsdir=/tmp:force_style='Fontname=Roboto Bold,FontSize=30,MarginV=70,PrimaryColour=${toFFmpegColor(primaryColor)},OutlineColour=${toFFmpegColor(outlineColor)}'`,
+      '-c:v', 'libx264',
+      '-crf', '23',
+      '-maxrate', '4M',
+      '-bufsize', '8M',
       'output.mp4'
     ]);
     const data = await ffmpeg.readFile('output.mp4');
     videoRef.current.src =
       URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
     setProgress(1);
+    setIsProcessing(false);
   }
 
   return (
@@ -90,7 +99,7 @@ export default function ResultVideo({ filename, transcriptionItems }) {
           onChange={ev => setOutlineColor(ev.target.value)} />
       </div>
       <div className="rounded-xl overflow-hidden relative">
-        {progress && progress < 1 && (
+        {isProcessing && (
           <div className="absolute inset-0 bg-black/80 flex items-center">
             <div className="w-full text-center">
               <div className="bg-green-600/50 mx-8 rounded-lg overflow-hidden relative">
