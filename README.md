@@ -4,7 +4,7 @@
 
 <h2>Insta Captions</h2>
 • Developed a dynamic caption generator using Next.js and AWS technologies, focusing on server-side
-rendering (SSR) and frontend design
+rendering (SSR) and frontend design using Tailwind
 
 • Integrated AWS Transcription service for converting audio content into text, improving accessibility
 
