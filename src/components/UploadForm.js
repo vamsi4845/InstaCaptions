@@ -15,12 +15,30 @@ export default function UploadForm() {
     if (files.length > 0) {
       const file = files[0];
       setIsUploading(true);
-      const res = await axios.postForm('/api/upload', {
-        file,
-      });
-      setIsUploading(false);
-      const newName = res.data.newName;
-      router.push('/' + newName);
+      
+      try {
+        // Step 1: Get presigned URL
+        const presignedResponse = await axios.post('/api/presigned-url', {
+          filename: file.name,
+          contentType: file.type
+        });
+        
+        const { presignedUrl, newName } = presignedResponse.data;
+        
+        // Step 2: Upload directly to S3 using presigned URL
+        await axios.put(presignedUrl, file, {
+          headers: {
+            'Content-Type': file.type
+          }
+        });
+        
+        setIsUploading(false);
+        router.push('/' + newName);
+      } catch (error) {
+        console.error('Upload failed:', error);
+        setIsUploading(false);
+        alert('Upload failed. Please try again.');
+      }
     }
   }
 

@@ -1,24 +1,14 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import uniqid from 'uniqid';
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-};
-
-export const maxDuration = 300;
+export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(req) {
-  const formData = await req.formData();
-  const file = formData.get('file');
-  const { name, type } = file;
-  const data = await file.arrayBuffer();
-
+  const { filename, contentType } = await req.json();
+  
   const s3client = new S3Client({
     region: 'ap-south-1',
     credentials: {
@@ -28,18 +18,24 @@ export async function POST(req) {
   });
 
   const id = uniqid();
-  const ext = name.split('.').slice(-1)[0];
+  const ext = filename.split('.').slice(-1)[0];
   const newName = id + '.' + ext;
 
-  const uploadCommand = new PutObjectCommand({
+  const command = new PutObjectCommand({
     Bucket: process.env.BUCKET_NAME,
-    Body: data,
-    ACL: 'public-read',
-    ContentType: type,
     Key: newName,
+    ContentType: contentType,
+    ACL: 'public-read',
   });
 
-  await s3client.send(uploadCommand);
+  const presignedUrl = await getSignedUrl(s3client, command, { 
+    expiresIn: 3600 // 1 hour
+  });
 
-  return Response.json({ name, ext, newName, id });
+  return Response.json({ 
+    presignedUrl, 
+    newName, 
+    id,
+    originalName: filename
+  });
 }
