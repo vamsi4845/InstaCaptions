@@ -1,17 +1,6 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import uniqid from 'uniqid';
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-};
-
-export const maxDuration = 300;
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
 
 export async function POST(req) {
   const formData = await req.formData();
